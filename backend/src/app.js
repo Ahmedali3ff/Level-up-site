@@ -7,6 +7,9 @@ import { apiLimiter } from './middleware/rateLimit.js';
 import { originCheck } from './middleware/originCheck.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 import authRoutes from './routes/auth.routes.js';
+import formsRoutes from './routes/forms.routes.js';
+import adminRoutes from './routes/admin.routes.js';
+import { resources } from './routes/resources.js';
 
 export const app = express();
 
@@ -22,7 +25,9 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 app.use('/api', apiLimiter, originCheck);
 app.use('/api/auth', authRoutes);
-// Next routers (programs, activities, announcements, contact, partnerships, statistics) mount here.
+app.use('/api', formsRoutes); // /contact, /partnerships, /search
+for (const resource of resources) app.use(`/api/${resource.name}`, resource.pub);
+app.use('/api/admin', adminRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
