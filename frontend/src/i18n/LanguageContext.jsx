@@ -1,8 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import en from './en.js';
 import ar from './ar.js';
+import enExtra from './en.extra.js';
+import arExtra from './ar.extra.js';
 
-const dictionaries = { en, ar };
+const dictionaries = { en: { ...en, ...enExtra }, ar: { ...ar, ...arExtra } };
 const LanguageContext = createContext(null);
 
 function getInitialLang() {

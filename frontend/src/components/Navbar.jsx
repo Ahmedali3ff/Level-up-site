@@ -36,6 +36,13 @@ export default function Navbar() {
         </nav>
 
         <div className='flex items-center gap-2'>
+          <Link
+            to='/search'
+            aria-label={t('search.title')}
+            className='rounded-md border border-border px-3 py-2 text-sm hover:border-accent'
+          >
+            &#128269;
+          </Link>
           <button
             type='button'
             onClick={() => setLang(lang === 'en' ? 'ar' : 'en')}

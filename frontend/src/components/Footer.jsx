@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Container } from './ui.jsx';
 import { useLanguage } from '../i18n/LanguageContext.jsx';
+import { useSiteData } from '../context/SiteDataContext.jsx';
 
 const quickLinks = [
   ['/about', 'nav.about'],
@@ -13,6 +14,7 @@ const quickLinks = [
 
 export default function Footer() {
   const { t } = useLanguage();
+  const { social } = useSiteData();
   const linkClass = 'text-sm text-muted hover:text-fg';
 
   return (
@@ -21,6 +23,15 @@ export default function Footer() {
         <div>
           <p className='text-lg font-bold'>{t('brand.name')}</p>
           <p className='mt-2 text-sm text-muted'>{t('brand.tagline')}</p>
+          {social.length > 0 && (
+            <ul className='mt-4 flex flex-wrap gap-x-4 gap-y-2'>
+              {social.map((s) => (
+                <li key={s.id}>
+                  <a href={s.url} target='_blank' rel='noopener noreferrer' className={linkClass}>{s.platform}</a>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         <div>
           <p className='mb-3 text-sm font-semibold'>{t('footer.quick')}</p>

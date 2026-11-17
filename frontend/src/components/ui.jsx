@@ -20,7 +20,7 @@ export function PageHeader({ title, subtitle, children }) {
     <header className='hero-glow border-b border-border'>
       <Container className='py-14 sm:py-20'>
         <h1 className='text-4xl font-bold tracking-tight sm:text-5xl'>{title}</h1>
-        {subtitle && <p className='mt-4 max-w-2xl text-lg text-muted'>{subtitle}</p>}
+        {subtitle && <p className='mt-4 max-w-2xl whitespace-pre-line text-lg text-muted'>{subtitle}</p>}
         {children}
       </Container>
     </header>
@@ -31,7 +31,7 @@ export function Card({ title, children }) {
   return (
     <div className='rounded-xl border border-border bg-surface p-5 transition-colors hover:border-brand/60'>
       <h3 className='font-semibold'>{title}</h3>
-      {children && <p className='mt-2 text-sm text-muted'>{children}</p>}
+      {children && <p className='mt-2 whitespace-pre-line text-sm text-muted'>{children}</p>}
     </div>
   );
 }
