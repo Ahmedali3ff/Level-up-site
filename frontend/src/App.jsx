@@ -11,6 +11,9 @@ import Next from './pages/Next.jsx';
 import Impact from './pages/Impact.jsx';
 import Partner from './pages/Partner.jsx';
 import Contact from './pages/Contact.jsx';
+import Programs from './pages/Programs.jsx';
+import ProgramDetail from './pages/ProgramDetail.jsx';
+import Search from './pages/Search.jsx';
 import { Privacy, Terms } from './pages/Legal.jsx';
 import NotFound from './pages/NotFound.jsx';
 
@@ -36,10 +39,13 @@ export default function App() {
         <Route index element={<Home />} />
         <Route path='about' element={<About />} />
         <Route path='activities' element={<Activities />} />
+        <Route path='programs' element={<Programs />} />
+        <Route path='programs/:slug' element={<ProgramDetail />} />
         <Route path='next' element={<Next />} />
         <Route path='impact' element={<Impact />} />
         <Route path='partner' element={<Partner />} />
         <Route path='contact' element={<Contact />} />
+        <Route path='search' element={<Search />} />
         <Route path='privacy' element={<Privacy />} />
         <Route path='terms' element={<Terms />} />
         <Route path='*' element={<NotFound />} />

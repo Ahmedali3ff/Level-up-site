@@ -3,6 +3,7 @@ const BASE = import.meta.env.VITE_API_URL || '';
 export const googleLoginUrl = `${BASE}/api/auth/google`;
 
 // Small fetch wrapper: sends the session cookie and throws Error(message) on non-2xx.
+// err.status and err.details (validation errors from the API) are attached when available.
 export async function api(path, { method = 'GET', body } = {}) {
   const res = await fetch(`${BASE}/api${path}`, {
     method,
@@ -21,6 +22,7 @@ export async function api(path, { method = 'GET', body } = {}) {
   if (!res.ok) {
     const err = new Error(data?.error || 'Request failed');
     err.status = res.status;
+    err.details = data?.details;
     throw err;
   }
   return data;
