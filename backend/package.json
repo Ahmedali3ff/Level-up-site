@@ -1,12 +1,13 @@
 {
   "name": "levelup-backend",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "description": "REST API for the LevelUp & NEXT website",
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
+    "test": "node --test test/",
     "db:migrate": "node scripts/migrate.js",
     "db:seed-admin": "node scripts/seed-admin.js"
   },

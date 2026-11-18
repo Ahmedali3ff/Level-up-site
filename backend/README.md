@@ -5,81 +5,68 @@ Node.js + Express + PostgreSQL. Everything used here is free and open source.
 ## Quick start
 
 1. `cd backend && npm install`
-2. `cp .env.example .env` and fill it in (see below).
-3. `npm run db:migrate` creates all tables from `db/schema.sql`.
+2. `cp .env.example .env` and fill it in.
+3. `npm run db:migrate` creates all tables (`db/schema.sql` plus `db/migrations/*.sql`).
 4. `npm run db:seed-admin` creates the first Super Admin from `SUPER_ADMIN_*` in `.env`.
 5. `npm run dev` starts the API on http://localhost:4000.
+6. `npm test` runs the unit tests.
 
 ## Database (free options)
 
 - Local PostgreSQL, or
 - Supabase free-tier Postgres: copy the connection string into `DATABASE_URL` and set `DATABASE_SSL=true`.
 
-Check the provider's current free-tier limits before deploying. If a quota is reached the API should fail gracefully instead of upgrading automatically.
+All tables have Row Level Security enabled, so the database cannot be read through a public REST layer. The API connects with a privileged role.
 
 ## Authentication
 
-- Sessions use a signed JWT stored in an `httpOnly` cookie (not readable by JavaScript). Default lifetime is 8 hours (`SESSION_HOURS`).
-- Passwords are hashed with bcrypt (cost 12). Login attempts are rate limited.
+- Signed JWT in an `httpOnly` cookie, 8 hours by default (`SESSION_HOURS`). Passwords are hashed with bcrypt (cost 12).
 - Every protected request re-checks the admin in the database, so disabling an account or changing a role takes effect immediately.
-- Roles: `super_admin`, `admin`, `content_manager`. Use `requireAuth` then `requireRole('admin')` on routes. `super_admin` always passes.
-- Logout clears the cookie. Tokens are stateless, so they are not revoked server-side before they expire.
-- CSRF: state-changing requests must come from `CLIENT_URL` (Origin check) and cookies are `SameSite=Lax` by default.
-
-### Endpoints
-
-| Method | Path | Description |
-| --- | --- | --- |
-| POST | `/api/auth/login` | Body: `{ email, password }`. Sets the session cookie. |
-| POST | `/api/auth/logout` | Clears the session cookie. |
-| GET | `/api/auth/me` | Current admin (requires login). |
-| GET | `/api/auth/google` | Starts Google sign-in (browser redirect). |
-| GET | `/api/auth/google/callback` | Google redirects back here, then to `/admin`. |
-| GET | `/api/health` | Health check. |
+- Roles: `super_admin` (everything, including admin accounts), `admin` (content, inbox), `content_manager` (content only).
+- Google sign-in only works for admins that already exist in `admin_users` (matched by verified email).
+- CSRF: state-changing requests must come from `CLIENT_URL` (Origin check); cookies are `SameSite=Lax` by default.
 
 ### Google sign-in setup (free)
 
-1. Open Google Cloud Console, create a project, then configure the OAuth consent screen.
+1. Google Cloud Console: create a project and configure the OAuth consent screen.
 2. Credentials > Create credentials > OAuth client ID > Web application.
-3. Add the authorized redirect URI: `http://localhost:4000/api/auth/google/callback` (and your deployed API URL + `/api/auth/google/callback` later).
-4. Copy the client ID and secret into `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env`.
+3. Authorized redirect URI: `http://localhost:4000/api/auth/google/callback` (plus your deployed API URL later).
+4. Put the client ID and secret in `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
 
-Google sign-in only works for admins who already exist in `admin_users` (matched by verified Google email). Unknown accounts are rejected with `?error=not_authorized` on `/admin/login`. Add admins by inserting them into `admin_users` (or through the dashboard once it exists).
+## API
 
-### Front-end integration
+JSON bodies use snake_case column names, except the two public forms which use camelCase. List endpoints return `{ items, total, page, limit }` and accept `page`, `limit` (max 100) and `q` (search) plus the filters listed below.
 
-```js
-// Email + password
-await fetch(`${API}/api/auth/login`, {
-  method: 'POST',
-  credentials: 'include',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ email, password }),
-});
+### Public
 
-// Google: a normal link or redirect
-window.location.href = `${API}/api/auth/google`;
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/api/programs`, `/api/programs/:idOrSlug` | Published only. Filters: `category`, `status`, `activity_type`, `initiative`, `is_featured` |
+| GET | `/api/activities` | Published only. Filters: `category`, `activity_type`, `initiative`, `program_id` |
+| GET | `/api/announcements` | Published and already dated. Filter: `program_id` |
+| GET | `/api/opportunities` | Non-draft. Filters: `category`, `status` |
+| GET | `/api/statistics` | Manually entered statistics |
+| GET | `/api/social-links` | Visible links |
+| GET | `/api/content/map` | `{ en: { section: text }, ar: { ... } }` |
+| GET | `/api/search?q=` | Searches this site only (min 2 chars) |
+| POST | `/api/contact` | `{ fullName, email, subject, message }`, rate limited |
+| POST | `/api/partnerships` | `{ fullName, organization, email, organizationType, partnershipInterest, message }`, rate limited |
 
-// Current user / logout
-await fetch(`${API}/api/auth/me`, { credentials: 'include' });
-await fetch(`${API}/api/auth/logout`, { method: 'POST', credentials: 'include' });
-```
+### Authentication
 
-The front-end needs an `/admin/login` page (it receives `?error=` codes from Google sign-in) and an `/admin` page.
+`POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`, `GET /api/auth/google`, `GET /api/auth/google/callback`.
 
-If the front-end and API are on different sites, set `COOKIE_SAMESITE=none` (HTTPS required).
+### Content management (admin, content_manager)
 
-## Project structure
+`POST /api/<resource>`, `PUT /api/<resource>/:id`, `DELETE /api/<resource>/:id` for `programs`, `activities`, `announcements`, `opportunities`, `statistics`, `social-links`, `content`. `POST /api/content` is an upsert on `(section_name, language)`. Drafts are listed through `GET /api/admin/<resource>`.
 
-```
-backend/
-  db/schema.sql            all tables
-  scripts/                 migrate.js, seed-admin.js
-  src/
-    config/                env.js, db.js
-    controllers/           request handlers
-    middleware/            auth, rate limit, origin check, errors
-    routes/                route definitions
-    utils/                 token helpers
-    app.js, server.js
-```
+### Admin only
+
+| Method | Path | Role |
+| --- | --- | --- |
+| GET | `/api/admin/dashboard` | any admin |
+| GET, PUT, DELETE | `/api/admin/messages[/:id]` | admin |
+| GET, PUT, DELETE | `/api/admin/partnerships[/:id]` | admin |
+| GET, POST, PUT | `/api/admin/users[/:id]` | super_admin |
+
+See `docs/DEPLOYMENT.md` for hosting, admin access and content update instructions.
